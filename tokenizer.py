@@ -2,7 +2,6 @@
 import re
 import time
 import mesinesp2.data
-from segtok.segmenter import split_single
 
 def get_tokens(text):
     text = re.sub("\s+"," ", text)
@@ -14,7 +13,7 @@ def get_tokens(text):
 def tokenizer(row, split_sentences):
     text = row['title'] + '. ' + row['abstractText']
     if split_sentences:
-        sentences = split_single(text)
+        sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', text) # Reference: https://www.semicolonworld.com/question/58276/python-regex-for-splitting-text-into-sentences-sentence-tokenizing
         tokens = [get_tokens(sent) for sent in sentences]
     else:
         tokens = get_tokens(text)
