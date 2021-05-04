@@ -45,7 +45,7 @@ def get_labels(df, descriptions):
     return y
 
 
-def get_descriptions(filepath):
+def get_descriptions(filepath, tokenize_definition = True, tokenize_name = True):
     f = codecs.open(filepath, 'r', 'utf-8').read()
     descriptions = {}
     terms = f.split('[Term]')[1:]
@@ -56,8 +56,16 @@ def get_descriptions(filepath):
             line_info = line.split()
             if line.startswith('id:'):
                 id = line_info[1][1:-1]
+            if line.startswith('name:'):
+                if tokenize_name:
+                    descriptions[id] = {"name" : tokenizer(line[7:-1], split_sentences = False, is_df = False)}
+                else:
+                    descriptions[id] = {"name" : line[7:-1]}
             if line.startswith('def:'):
-                descriptions[id] = tokenizer(line[7:-2], split_sentences = False, is_df = False)
+                if tokenize_definition:
+                    descriptions[id]["def"] = tokenizer(line[7:-2], split_sentences = False, is_df = False)
+                else:
+                    descriptions[id]["def"] = line[7:-2]
     return descriptions
                 
     
