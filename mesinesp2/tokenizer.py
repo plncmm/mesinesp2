@@ -15,13 +15,30 @@ def get_tokens(text):
     tokens = list(filter(lambda a: a != " ", tokens))
     return tokens
 
-def tokenizer(row, split_sentences, is_df = True):
+def normalizer(text, remove_tildes = True): #normalizes a given string to lowercase and changes all vowels to their base form
+    text = text.lower() #string lowering
+    text = re.sub(r'[^A-Za-zñáéíóú]', ' ', text) #replaces every punctuation with a space
+    if remove_tildes:
+        text = re.sub('á', 'a', text) #replaces special vowels to their base forms
+        text = re.sub('é', 'e', text)
+        text = re.sub('í', 'i', text)
+        text = re.sub('ó', 'o', text)
+        text = re.sub('ú', 'u', text)
+    return text
+
+def tokenizer(row, split_sentences, is_df = True, normalize = False):
     if is_df: row = row['title'] + '. ' + row['abstractText']
     if split_sentences:
         sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', row) # Reference: https://www.semicolonworld.com/question/58276/python-regex-for-splitting-text-into-sentences-sentence-tokenizing
-        tokens = [get_tokens(sent) for sent in sentences]
+        if normalize:
+            tokens = [get_tokens(normalizer(sent)) for sent in sentences]
+        else:
+            tokens = [get_tokens(sent) for sent in sentences]
     else:
-        tokens = get_tokens(row)
+        if normalize:
+            tokens = get_tokens(normalizer(row))
+        else:
+            tokens = get_tokens(row)
     return tokens
 
 def transform(df, descriptions, split_sentences = False, transform_labels = True):
