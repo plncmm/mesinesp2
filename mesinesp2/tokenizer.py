@@ -24,11 +24,14 @@ def tokenizer(row, split_sentences, is_df = True):
         tokens = get_tokens(row)
     return tokens
 
-def transform(df, descriptions, split_sentences = False):
+def transform(df, descriptions, split_sentences = False, transform_labels = True):
     print(f'Transforming {df.shape[0]} articles..')
     start = time.time()
     x = df.apply(tokenizer, axis = 1, args = [split_sentences, True])
-    y = get_labels(df['decsCodes'], descriptions)
+    if transform_labels:
+        y = get_labels(df['decsCodes'], descriptions)
+    else:
+        y = df['decsCodes']
     print(f'{df.shape[0]} articles transformed in {(time.time()-start)/60} minutes.')
     return x, y
 
