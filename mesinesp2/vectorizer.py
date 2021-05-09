@@ -35,12 +35,12 @@ def get_idf(decs):
     #    json.dump(idf, json_file, indent=2, ensure_ascii=False)
     return idf, tokenized_decs, sentences
 
-def to_vector(text, model, idf):
+def to_vector(text, model, idf, is_tokenized=False):
     """ Receives a sentence string along with a word embedding model and 
     returns the vector representation of the sentence"""
-    tokens = text.split() # splits the text by space and returns a list of words
+    if not is_tokenized: text= text.split() # splits the text by space and returns a list of words
     vec = np.zeros(300) # creates an empty vector of 300 dimensions
-    for word in tokens: # iterates over the sentence
+    for word in text: # iterates over the sentence
         if (word in model) & (word in idf): # checks if the word is both in the word embedding and the tf-idf model
             vec += model[word]*idf[word] # adds every word embedding to the vector
     if np.linalg.norm(vec) > 0:
@@ -48,10 +48,17 @@ def to_vector(text, model, idf):
     else:
         return vec
 
+
+
 def get_pretrained_embeddings(sentences, model, idf, tokenized_decs):
     vectorized_sent = [to_vector(text, model, idf) for text in sentences]
     embedding_dict = {list(tokenized_decs.keys())[i]: vectorized_sent[i].tolist() for i in range(len(list(tokenized_decs.keys())))}   
     return embedding_dict
+
+def get_embeddings_from_text(sentences, model, idf):
+    vectorized_sent = [to_vector(text, model, idf, is_tokenized=True) for text in sentences]
+    return vectorized_sent
+
 
 def get_contextualized_embeddings(decs, embeddings):
     contextualized_embeddings = {}
@@ -64,9 +71,7 @@ def get_contextualized_embeddings(decs, embeddings):
         contextualized_embeddings[k] = s.embedding.detach().numpy() 
     return contextualized_embeddings
 
-
-
-if __name__=='__main__':
+def create_decs_embeddings():
     descriptions = mesinesp2.tokenizer.get_descriptions("../data/raw/DeCS2020.obo", tokenize_definition = False, tokenize_name = False)
     decs = {}
     for key,val in descriptions.items():
@@ -101,19 +106,20 @@ if __name__=='__main__':
 
 
     # Bert embeddings
-    start = time.time()
-    bert = TransformerDocumentEmbeddings("dccuchile/bert-base-spanish-wwm-uncased") # Reference: https://github.com/UKPLab/sentence-transformers
-    bert_embeddings = get_contextualized_embeddings(decs, bert) # 768 Dimensiones
-    with open('../embeddings/bert.json', 'w') as fp:
-        json.dump(bert_embeddings, fp)
-    print(f'{time.time()-start} seconds to get bert embeddings.')
+    #start = time.time()
+    #bert = TransformerDocumentEmbeddings("dccuchile/bert-base-spanish-wwm-uncased") # Reference: https://github.com/UKPLab/sentence-transformers
+    #bert_embeddings = get_contextualized_embeddings(decs, bert) # 768 Dimensiones
+    #with open('../embeddings/bert.json', 'w') as fp:
+    #    json.dump(bert_embeddings, fp)
+    #print(f'{time.time()-start} seconds to get bert embeddings.')
 
     # Flair emebedings
-    start = time.time()
-    stacked_embeddings = StackedEmbeddings(embeddings = [FlairEmbeddings('es-forward'), FlairEmbeddings('es-backward')])
-    flair = DocumentPoolEmbeddings([stacked_embeddings])
-    flair_embeddings = get_contextualized_embeddings(decs, flair) # 4096 Dimensiones
-    with open('../embeddings/flair.json', 'w') as fp:
-        json.dump(flair_embeddings, fp)
-    print(f'{time.time()-start} seconds to get flair embeddings.')
-
+    #start = time.time()
+    #stacked_embeddings = StackedEmbeddings(embeddings = [FlairEmbeddings('es-forward'), FlairEmbeddings('es-backward')])
+    #flair = DocumentPoolEmbeddings([stacked_embeddings])
+    #flair_embeddings = get_contextualized_embeddings(decs, flair) # 4096 Dimensiones
+    #with open('../embeddings/flair.json', 'w') as fp:
+    #    json.dump(flair_embeddings, fp)
+    #print(f'{time.time()-start} seconds to get flair embeddings.')
+    
+    return idf
