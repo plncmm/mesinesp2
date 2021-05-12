@@ -8,6 +8,8 @@ import fasttext
 import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
 import mesinesp2
+from metrics import f1_score
+from utils import create_json
 from sklearn.metrics.pairwise import cosine_similarity
 sys.path.append("..")
 
@@ -39,55 +41,46 @@ def similarity(data, model, idf):
     decs_matrix = np.array([v for v in decs_embs.values()])
     return cosine_similarity(abstract_matrix, decs_matrix)
 
-def top_k_values(array):
-    indexes = array.argsort()[-10:][::-1]
-    A = set(indexes)
-    B = set(list(range(array.shape[0])))
-    array[list(B.difference(A))]=0
-    return array
+def top_k_values(array, k):
+    indexes = array.argsort()[-k:][::-1]
+    return indexes
 
     
 
 if __name__ == '__main__':
     descriptions = get_descriptions('../data/raw/DeCS2020.obo')
-    train, dev, test = mesinesp2.data.load_dataset('../data/raw', 1)
-    #x_train, y_train = transform(train, descriptions, split_sentences = False, transform_labels = False)
+    _, dev, _ = mesinesp2.data.load_dataset('../data/raw', 1)
     x_dev, y_dev = transform(dev, descriptions, split_sentences = False, transform_labels = False)
+    model = 'sbw'
+    
+    #idf = create_decs_embeddings() # Run just in case you don't have decs_mix decs_sbw and idf json files
+    with open('../embeddings/idf.json') as f:
+        idf = json.load(f)
 
-    # We first create each embedding file. It contains the embedding representation for each DecS code.
-    idf = create_decs_embeddings()
+    dev_sbw_similarity = similarity(x_dev, model, idf)
 
-    # Cosine similarity with sbw
-    #train_sbw_similarity = similarity(x_train, 'sbw', idf)
-    #print(train_sbw_similarity.shape)
-    dev_sbw_similarity = similarity(x_dev, 'sbw', idf)
-    print(dev_sbw_similarity.shape)
-    print(dev_sbw_similarity[0, :])
-    #print(np.max(dev_sbw_similarity, axis=1))
+    result = np.apply_along_axis(top_k_values, 1, dev_sbw_similarity, 100)
+    create_json(dev['id'], result, descriptions, model)
 
-    result = np.apply_along_axis(top_k_values, 1, dev_sbw_similarity)
-    #print(result.shape)
-    #print(result)
+    with open(f'../embeddings/{model}_predictions.json') as json_file:
+        data = json.load(json_file)
 
-    for i, abs in enumerate(x_dev):
-        print('-------------------------')
-        # Abstract
-        print(abs)
-        top = np.where(result[i,:] != 0)[0]
-        ar = []
-        for val in top:
-            ar.append(list(descriptions.keys())[val])
-        # Predicted codes with the comparison of embeddings
-        print('---------------------- Predicted -----------------')
-        print(ar)
-        print('---------------------- Real ----------------------')
-        print(y_dev[i])
-        print('-------------------------')
-    # Cosine similarity with mix
-    #train_mix_similarity = similarity(x_train, 'mix', idf)
-    #print(train_mix_similarity.shape)
-    #dev_mix_similarity = similarity(x_dev, 'mix', idf)
-    #print(dev_mix_similarity.shape)
+    pred = []
+    for doc in data['documents']:
+        pred.append(doc['labels'])
+        
+    real = dev["decsCodes"]
+    assert(len(real)==len(pred))
+    tp, fn, fp, p, r, f1 = f1_score(real, pred)
+    print(F'TP: {tp}')
+    print(F'FN: {fn}')
+    print(F'FP: {fp}')
+    print(f'Precision: {p}')
+    print(f'Recall: {r}')
+    print(f'F1-Score: {f1}')
+
+
+    
     
     
     

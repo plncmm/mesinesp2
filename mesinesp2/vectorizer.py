@@ -86,6 +86,8 @@ def create_decs_embeddings():
 
 
     idf, tokenized_decs, sentences = get_idf(decs)
+    with open('../embeddings/idf.json', 'w+', encoding='utf-8') as json_file:
+        json.dump(idf, json_file, indent=2, ensure_ascii=False)
 
     # SBW
     start = time.time()

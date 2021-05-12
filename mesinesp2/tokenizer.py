@@ -26,7 +26,7 @@ def normalizer(text, remove_tildes = True): #normalizes a given string to lowerc
         text = re.sub('ú', 'u', text)
     return text
 
-def tokenizer(row, split_sentences, is_df = True, normalize = False):
+def tokenizer(row, split_sentences, is_df = True, normalize = True):
     if is_df: row = row['title'] + '. ' + row['abstractText']
     if split_sentences:
         sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', row) # Reference: https://www.semicolonworld.com/question/58276/python-regex-for-splitting-text-into-sentences-sentence-tokenizing
